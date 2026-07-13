@@ -10,22 +10,26 @@ public class NamedParameterLanguageDriverTest {
 	void testGuardSql() {
 		ReplaceScriptParser parser = new ReplaceScriptParser();
 		String sql = makeGuardTestSql("\"", "\"");
-		assertEquals(sql, parser.replace(sql));
+		assertEquals(encloseScript(sql), parser.replace(sql));
 
 		sql = makeGuardTestSql("'", "'");
-		assertEquals(sql, parser.replace(sql));
+		assertEquals(encloseScript(sql), parser.replace(sql));
 
 		sql = makeGuardTestSql("/*", "*/");
-		assertEquals(sql, parser.replace(sql));
+		assertEquals(encloseScript(sql), parser.replace(sql));
 
 		sql = makeGuardTestSql("--", "\n");
-		assertEquals(sql, parser.replace(sql));
+		assertEquals(encloseScript(sql), parser.replace(sql));
 
 		sql = makeGuardTestSql("--", "\r\n");
-		assertEquals(sql, parser.replace(sql));
+		assertEquals(encloseScript(sql), parser.replace(sql));
 	}
 
 	private String makeGuardTestSql(String guardianStart, String guardianEnd) {
 		return guardianStart + " Guardian guard: :person " + guardianEnd;
+	}
+
+	private String encloseScript(String script) {
+		return "<script>" + script + "</script>";
 	}
 }

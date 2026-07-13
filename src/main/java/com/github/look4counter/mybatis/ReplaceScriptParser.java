@@ -110,7 +110,7 @@ public class ReplaceScriptParser {
 			i++;
 		}
 
-		return sb.toString();
+		return "<script>" + sb.toString() + "</script>";
 	}
 
 	private int findCommentEnd(char[] src, int from, int len) {
