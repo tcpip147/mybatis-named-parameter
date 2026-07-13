@@ -19,7 +19,7 @@ public class ReplaceScriptParser {
 			char c = src[i];
 
 			if (c == '"' && !inSingleQuote) {
-				if (i == 0 || src[i - 1] != '\\') {
+				if (!isEscaped(src, i)) {
 					inDoubleQuote = !inDoubleQuote;
 				}
 				sb.append(c);
@@ -28,7 +28,7 @@ public class ReplaceScriptParser {
 			}
 
 			if (c == '\'' && !inDoubleQuote) {
-				if (i == 0 || src[i - 1] != '\\') {
+				if (!isEscaped(src, i)) {
 					inSingleQuote = !inSingleQuote;
 				}
 				sb.append(c);
@@ -46,19 +46,19 @@ public class ReplaceScriptParser {
 				if (isMatch(src, i, "/*#")) {
 					int start = i + 3;
 					int end = findCommentEnd(src, start, len);
-
 					if (end != -1) {
 						int exprStart = start;
 						int exprEnd = end;
 
-						while (exprStart < exprEnd && Character.isWhitespace(src[exprStart])) {
+						while (exprStart < exprEnd && Character.isWhitespace(src[exprStart]))
 							exprStart++;
-						}
-						while (exprEnd > exprStart && Character.isWhitespace(src[exprEnd - 1])) {
+						while (exprEnd > exprStart && Character.isWhitespace(src[exprEnd - 1]))
 							exprEnd--;
-						}
 
-						sb.append("<").append(src, exprStart, exprEnd - exprStart).append(">");
+						sb.append("<");
+						appendEscapedXml(sb, src, exprStart, exprEnd - exprStart);
+						sb.append(">");
+
 						i = end + 2;
 						continue;
 					}
@@ -70,7 +70,19 @@ public class ReplaceScriptParser {
 					sb.append(src, i, commentLen);
 					i = end + 2;
 					continue;
+				} else {
+					sb.append(src, i, len - i);
+					break;
 				}
+			}
+
+			if ((c == '-' && i + 1 < len && src[i + 1] == '-') || c == '#') {
+				int start = i;
+				while (i < len && src[i] != '\n' && src[i] != '\r') {
+					i++;
+				}
+				sb.append(src, start, i - start);
+				continue;
 			}
 
 			if (c == ':') {
@@ -113,12 +125,38 @@ public class ReplaceScriptParser {
 	}
 
 	private boolean isMatch(char[] src, int offset, String target) {
-		if (offset + target.length() > src.length)
+		if (offset + target.length() > src.length) {
 			return false;
+		}
 		for (int i = 0; i < target.length(); i++) {
-			if (src[offset + i] != target.charAt(i))
+			if (src[offset + i] != target.charAt(i)) {
 				return false;
+			}
 		}
 		return true;
+	}
+
+	private void appendEscapedXml(StringBuilder sb, char[] src, int start, int length) {
+		int end = start + length;
+		for (int k = start; k < end; k++) {
+			char ch = src[k];
+			if (ch == '<') {
+				sb.append("&lt;");
+			} else if (ch == '>') {
+				sb.append("&gt;");
+			} else {
+				sb.append(ch);
+			}
+		}
+	}
+
+	private boolean isEscaped(char[] src, int index) {
+		int count = 0;
+		int p = index - 1;
+		while (p >= 0 && src[p] == '\\') {
+			count++;
+			p--;
+		}
+		return count % 2 != 0;
 	}
 }
